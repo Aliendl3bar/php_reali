@@ -1,23 +1,46 @@
-<!-- session_start(); kan5aomohaa bax nloadiw xi variable f loads kamlin -->
-<!-- diclarina reviews inside session bax nb9aw n loadiwha  -->
-
-
 <?php
-    session_start();
+    $reviewsFile = 'reviews.txt'?? 'reviews.json';
+
+    
+    function loadReviews($file) {
+        if (file_exists($file)) {
+            $content = file_get_contents($file);
+            return json_decode($content, true) ?? [];
+        }
+        return [];
+    }
+
+    // Save reviews to file  + json pretty print ( bax yt9ra mzyan )
+    function saveReviews($file, $reviews) {
+        file_put_contents($file, json_encode($reviews, JSON_PRETTY_PRINT));
+    }
+
+
     function display($name, $email, $comment) {
-        return "Name: " . htmlspecialchars($name) . "<br>" .
-            "Email: " . htmlspecialchars($email) . "<br>" .
-            "Comment: " . htmlspecialchars($comment) . "<br>";
+        return [
+            'name' => $name,
+            'email' => $email,
+            'comment' => $comment,
+            'timestamp' => date('Y-m-d H:i')
+        ];
     }
-    if (!isset($_SESSION['reviews'])) {
-        $_SESSION['reviews'] = [];
-    }
+
+    // Load reviews
+    $allReviews = loadReviews($reviewsFile);
     $result = null;
+
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $name = $_POST["name"] ?? 0;
-        $email = $_POST["email"] ?? 0;
-        $comment = $_POST["comment"] ?? 0;
-        $result = display($name, $email, $comment);
+        $name = $_POST["name"] ?? '';
+        $email = $_POST["email"] ?? '';
+        $comment = $_POST["comment"] ?? '';
+        
+        if (!empty($name) && !empty($email) && !empty($comment)) {
+            $result = display($name, $email, $comment);
+            $allReviews[] = $result;
+            saveReviews($reviewsFile, $allReviews);
+        }
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
     }
 
 ?>
@@ -41,14 +64,17 @@
     
     <h2>Reviews List</h2>
     <?php
-        if ($result !== null) {
-            $_SESSION['reviews'][] = $result;
-            if (count($_SESSION['reviews']) > 5) {
-                array_shift($_SESSION['reviews']);
-            }
-        }
-        foreach ($_SESSION['reviews'] as $review) {
-            echo $review . "<hr>";
+        //a5ir 5
+        $recentReviews = array_slice($allReviews, -5);
+        //reverse 
+        $recentReviews = array_reverse($recentReviews);
+        
+        foreach ($recentReviews as $review) {
+            echo "Name: " . htmlspecialchars($review['name']) . "<br>";
+            echo "Email: " . htmlspecialchars($review['email']) . "<br>";
+            echo "Comment: " . htmlspecialchars($review['comment']) . "<br>";
+            echo "Date: " . htmlspecialchars($review['timestamp']) . "<br>";
+            echo "<hr>";
         }
     ?>
 </body>
